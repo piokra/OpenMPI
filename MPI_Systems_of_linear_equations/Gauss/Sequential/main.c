@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
     rvec = Seq_gauss(matrix,vec,size,size);
 
 
+
     seq_e=MPI_Wtime();
     printf("Sequential gauss work time=%f\n",seq_e-seq_s);
     double res=0;

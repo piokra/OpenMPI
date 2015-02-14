@@ -20,7 +20,7 @@ void randomize_matrix(double** matrix, int y, int x, int seed, double max, doubl
     int i,j;
     for(i=0; i<y; i++)
         for(j=0; j<x; j++)
-            matrix[i][j]=rand()%((int)ceil(max-min))-ceil(min);
+            matrix[i][j]=rand()%((int)ceil(max-min))+ceil(min);
 }
 
 
@@ -67,7 +67,13 @@ void load_matrix(const char* str, double*** matrix, int* x, int* y)
 void save_vector(const char* str, double* vec, int size)
 {
     FILE* file = 0;
+
     file = fopen(str,"w");
+    if(!file)
+    {
+        printf("Unable to open file\n");
+        return;
+    }
     int i;
     fprintf(file,"%i\n",size);
     for(i=0; i<size; i++)

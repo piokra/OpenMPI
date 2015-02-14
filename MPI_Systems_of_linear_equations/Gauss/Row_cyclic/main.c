@@ -67,14 +67,13 @@ int main(int argc, char* argv[])
     }
 
 
-    //if(!rank) display_matrix(matrix,size,size);
 
 
     seq_s=MPI_Wtime();
 
     scatter_data_rc(matrix,vec,size);
-    rvec=parrarel_gauss_rc(matrix,vec,size);
 
+    rvec=parrarel_gauss_rc(matrix,vec,size);
     seq_e=MPI_Wtime();
     printf("Work time=%f\n",seq_e-seq_s);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -82,9 +81,13 @@ int main(int argc, char* argv[])
     double res=0;
     if(!rank)
     {
-        save_vector("result.dat",rvec,size);
+        for(i=0;i<size;i++) res+=rvec[i]*matrix[0][i];
+        if(ABS(res-vec[0]<0.001)) printf("Seems ok\n");
+        save_vector("result2.dat",rvec,size);
     }
+
     MPI_Finalize();
+
 
     return 0;
 
@@ -198,6 +201,7 @@ int get_global_max(double** matrix, int root, int k, int size)
     DOUBLE_INT recv;
     di = get_local_max(matrix,k,size);
     MPI_Reduce(&di,&recv,1,MPI_DOUBLE_INT,MPI_MAXLOC,root,MPI_COMM_WORLD);
+    if(recv.val==0&&rank==root) exit(-1);
     return recv.it;
 
 }
@@ -291,6 +295,7 @@ double* parrarel_gauss_rc(double** matrix, double* vec, int size)
             }
         }
     }
+
     double tres;
     for(i=size-1; i>=0 ; i--)
     {

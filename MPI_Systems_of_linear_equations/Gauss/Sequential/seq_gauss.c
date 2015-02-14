@@ -13,7 +13,7 @@ void Seq_add_row(double** matrix, double* vec, int src, int dest, int size, doub
         matrix[dest][i]+=matrix[src][i]*mul;
     }
 }
-void Seq_pivot(double** matrix, double* vec, int k, int xm, int ym)
+void Seq_pivot(double** matrix, int k, int xm, int ym)
 {
     int i,max_col; double max_val=0 ,*t=0;
     for(i=k; i<xm; i++)
@@ -28,10 +28,6 @@ void Seq_pivot(double** matrix, double* vec, int k, int xm, int ym)
         t=matrix[k];
         matrix[k]=matrix[max_col];
         matrix[max_col]=t;
-        double tv=vec[k];
-        vec[k]=vec[max_col];
-        vec[max_col]=tv;
-
 
 }
 double* Seq_gauss(double** matrix, double* vec, int x, int y)
@@ -41,7 +37,7 @@ double* Seq_gauss(double** matrix, double* vec, int x, int y)
     double mul;
     for(i=0; i<x; i++)
     {
-        Seq_pivot(matrix,vec,i,x,y);
+        Seq_pivot(matrix,i,x,y);
         for(j=i+1; j<x; j++)
         {
             mul=-matrix[j][i]/matrix[i][i];

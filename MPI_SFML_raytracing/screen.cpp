@@ -5,6 +5,7 @@
 #include "sphere.h"
 #include <math.h>
 #include <fstream>
+#include "lightsource.h"
 Screen::Screen(int x, int y) : m_x(x), m_y(y)
 {
     //ctor
@@ -40,16 +41,28 @@ Screen::Screen(int x, int y) : m_x(x), m_y(y)
             Broadcast the number of objects
                                                 **/
 
-    int count,type;
+    int lcount,count,type;
     Sphere* sphere;
     Point3d pt(500,500,2500);
     if(!m_comm_rank)
     {
         file.open("input.dat2");
+        file >> lcount;
+    }
+    MPI_Bcast(&lcount,1,MPI_INT,0,MPI_COMM_WORLD);
+    for(int i=0; i<lcount; i++)
+    {
+        LightSource* ls = new LightSource();
+        if(!m_comm_rank)
+            ls->readLightSource(file);
+        ls->broadcastLightSource();
+        m_light_sources.push_back(ls);
+    }
+    if(!m_comm_rank)
+    {
         file >> count;
     }
     MPI_Bcast(&count,1,MPI_INT,0,MPI_COMM_WORLD);
-
 
     /**
             Broadcast the item type and load it
@@ -242,11 +255,51 @@ Vector3d Screen::countSingleRay(ParamLine ray, double impact,double n, int depth
             pl.origin=ray.getPoint(t);
             pl.origin=ray.getPoint(0.1);
             ct = countSingleRay(pl,impact*(1-reflect)*(1-tr),newn,depth+1);
-            return cc*tr+cr*(1-tr)*reflect+ct*(1-tr)*ti;
+            Vector3d ret = cc*tr+cr*(1-tr)*reflect+ct*(1-tr)*ti;
+            Vector3d light(0,0,0);
+            for(int k =0; k<m_light_sources.size(); k++)
+            {
+                Point3d lorigin = ray.getPoint(t);
+                Vector3d lvec = (m_light_sources.at(k)->getPos())-lorigin;
+                ParamLine lpl;
+                lpl.origin=lorigin;
+                lpl.vector=lvec;
+                lpl.normalize();
+                light=light+countSingleLightRay(lpl,1,n,m_light_sources.at(k),0);
+            }
+            ret.x=ret.x*light.x;
+            ret.y=ret.y*light.y;
+            ret.z=ret.z*light.z;
+            return ret;
 
 
         }
     return Vector3d(0,0,0);
 
+}
+
+Vector3d Screen::countSingleLightRay(ParamLine ray, double impact, double n, LightSource* target, int depth)
+{
+    ray.origin=ray.getPoint(0.01);
+    const double sdist = (ray.origin.x-target->getPos().x)*(ray.origin.x-target->getPos().x)+(ray.origin.y-target->getPos().y)*(ray.origin.y-target->getPos().y)+(ray.origin.z-target->getPos().z)*(ray.origin.z-target->getPos().z);
+    const double dist = sqrt(sdist);
+    if(depth>MAXDEPTH||impact<0.01) return Vector3d(0,0,0);
+    double t2,t=INFINITY;
+    Object* obj;
+    for(int k=0; k<m_objects.size(); k++)
+    {
+        t2=m_objects.at(k)->getCollision(ray);
+        if(!isnan(t2))
+        {
+            if(t2>0.1&&t2<t)
+            {
+                t=t2;
+                obj=m_objects.at(k);
+            }
+
+        }
+    }
+    if(isnan(t)||t>dist) return target->getLight();
+    return Vector3d(0,0,0);
 }
 

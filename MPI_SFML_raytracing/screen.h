@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "geometry.h"
+class LightSource;
 class Object;
 class Screen
 {
@@ -16,6 +17,7 @@ public:
 protected:
     sf::Color countSinglePixel(int x, int y, int samples);
     Vector3d countSingleRay(ParamLine ray, double impact,double n, int depth);
+    Vector3d countSingleLightRay(ParamLine ray, double impact, double n, LightSource* source , int depth);
 
     int getOwnedRows(int rank);
 
@@ -24,6 +26,7 @@ protected:
     double reflectance(const Vector3d& normal, const Vector3d& ray, double n1, double n2);
 private:
     std::vector<Object*> m_objects;
+    std::vector<LightSource*> m_light_sources;
     int m_comm_rank;
     int m_comm_size;
     sf::Uint8* m_data;
